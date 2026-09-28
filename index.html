@@ -50,6 +50,8 @@ aside{display:flex;flex-direction:column;background:#101312;border-left:1px soli
 .chip.on{color:#eceeec;border-color:#3a3f3c}
 .chip.on[data-k="WIFI"]{border-color:#2fb673;color:#2fb673}
 .chip.on[data-k="BLE"]{border-color:#e2a336;color:#e2a336}
+.chip.on[data-k="CELL"]{border-color:#9b59b6;color:#9b59b6}
+.chip.on[data-k="FLOCK"]{border-color:#3498db;color:#3498db}
 .chip.on[data-k="OPEN"]{border-color:#e5484d;color:#e5484d}
 #search{width:100%;background:#131615;border:1px solid #262a28;border-radius:3px;color:#eceeec;padding:6px 8px;font:12px inherit;margin-top:8px}
 #search:focus{outline:none;border-color:#eceeec}
@@ -73,23 +75,25 @@ tbody tr.sel td{background:#1c2a22}
 <body>
 <header>
   <div class="brand">DrvSniff</div>
-  <label class="loadbtn">Load CSV<input type="file" id="fin" accept=".csv,text/csv" multiple hidden></label>
-  <div class="filebar" id="filebar">sample data — drop WiGLE, Ghost ESP or similar wardriving CSVs to replace it</div>
+  <label class="loadbtn">Load CSV / .gz<input type="file" id="fin" accept=".csv,text/csv,.gz,application/gzip" multiple hidden></label>
+  <div class="filebar" id="filebar">sample data — drop WiGLE (.csv or .csv.gz) or wardriving logs</div>
   <div class="qstats" id="qstats"></div>
 </header>
 <main>
   <div id="mapwrap">
     <div id="map"></div>
     <div id="legend">
-      <span><i class="dot" style="background:#2fb673"></i>WiFi secured</span>
-      <span><i class="dot" style="background:#e5484d"></i>WiFi open</span>
+      <span><i class="dot" style="background:#2fb673"></i>WiFi</span>
+      <span><i class="dot" style="background:#e5484d"></i>Open WiFi</span>
       <span><i class="dot" style="background:#e2a336"></i>Bluetooth</span>
+      <span><i class="dot" style="background:#9b59b6"></i>Cell</span>
+      <span><i class="dot" style="background:#3498db"></i>Flock Cam</span>
     </div>
     <div id="status">
       <span id="stCoord">lat — lon —</span>
       <span id="stZoom"></span>
     </div>
-    <div id="drop">Drop wardriving CSV file(s) to load</div>
+    <div id="drop">Drop .csv or .csv.gz file(s) to load</div>
   </div>
   <aside>
     <div class="sec">
@@ -97,7 +101,9 @@ tbody tr.sel td{background:#1c2a22}
       <div class="toggles">
         <button class="chip on" data-k="WIFI">&#9679; WiFi</button>
         <button class="chip on" data-k="BLE">&#9679; Bluetooth</button>
-        <button class="chip" data-k="OPEN">&#9679; Open only</button>
+        <button class="chip on" data-k="CELL">&#9679; Cell</button>
+        <button class="chip on" data-k="FLOCK">&#9679; Flock Cam</button>
+        <button class="chip" data-k="OPEN">&#9679; Open WiFi only</button>
       </div>
       <input type="text" id="search" placeholder="search SSID or MAC…">
     </div>
@@ -115,11 +121,11 @@ tbody tr.sel td{background:#1c2a22}
 <script>
 (function(){
 'use strict';
-const COLORS={WIFI:'#2fb673',OPEN:'#e5484d',BLE:'#e2a336'};
+const COLORS={WIFI:'#2fb673',OPEN:'#e5484d',BLE:'#e2a336',CELL:'#9b59b6',FLOCK:'#3498db'};
 
 let all=[], filtered=[];
 let selected=null;
-let filters={WIFI:true,BLE:true,OPENONLY:false};
+let filters={WIFI:true,BLE:true,CELL:true,FLOCK:true,OPENONLY:false};
 let searchTerm='';
 let sort={key:'rssi',dir:-1};
 
@@ -127,21 +133,21 @@ const SAMPLE=[
 ['AA:11:22:33:44:01','CafeNet-Guest','[ESS]','2026-05-02 09:14:03',6,-58,40.7420,-73.9930,'WIFI'],
 ['AA:11:22:33:44:02','HomeWifi_5G','[WPA2-PSK-CCMP][ESS]','2026-05-02 09:14:07',44,-49,40.7423,-73.9925,'WIFI'],
 ['AA:11:22:33:44:03','Linksys00231','[WEP]','2026-05-02 09:14:22',1,-71,40.7431,-73.9918,'WIFI'],
-['AA:11:22:33:44:04','xfinitywifi','[ESS]','2026-05-02 09:14:40',11,-66,40.7438,-73.9906,'WIFI'],
-['AA:11:22:33:44:05','FrontDesk-5G','[WPA2-PSK-CCMP][ESS]','2026-05-02 09:15:02',6,-77,40.7412,-73.9941,'WIFI'],
-['AA:11:22:33:44:06','ATT-9F3','[WPA3-SAE-CCMP][ESS]','2026-05-02 09:15:20',153,-54,40.7405,-73.9952,'WIFI'],
-['AA:11:22:33:44:07','','[ESS]','2026-05-02 09:15:41',6,-81,40.7446,-73.9899,'WIFI'],
-['AA:11:22:33:44:08','printer-office','[WPA2-PSK-CCMP][ESS]','2026-05-02 09:16:01',36,-63,40.7398,-73.9962,'WIFI'],
-['C4:BE:11:00:AA:01','','','2026-05-02 09:14:15',0,-70,40.7419,-73.9928,'BLE'],
 ['C4:BE:11:00:AA:02','Pixel Buds Pro','','2026-05-02 09:14:33',0,-55,40.7427,-73.9920,'BLE'],
+['310-410-1234','AT&T LTE','','2026-05-02 09:14:50',0,-85,40.7450,-73.9900,'CELL'],
 ['C4:BE:11:00:AA:03','LE-Smart Lock','','2026-05-02 09:14:58',0,-62,40.7434,-73.9911,'BLE'],
-['C4:BE:11:00:AA:04','','','2026-05-02 09:15:29',0,-74,40.7409,-73.9947,'BLE'],
-['C4:BE:11:00:AA:05','Fitbit Charge','','2026-05-02 09:15:50',0,-59,40.7442,-73.9903,'BLE']
+['FL:0C:K0:00:11:22','flock-os-8273','[WPA2-PSK-CCMP]','2026-05-02 09:15:10',6,-60,40.7410,-73.9910,'FLOCK'],
+['C4:BE:11:00:AA:04','','','2026-05-02 09:15:29',0,-74,40.7409,-73.9947,'BLE']
 ];
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function isOpen(auth){const a=String(auth||'');if(!a||a==='[ESS]')return true;return !/wpa|wep|psk|eap|sae|8021x|owe|wapi/i.test(a);}
-function colorFor(p){if(p.type==='BLE')return COLORS.BLE;return isOpen(p.auth)?COLORS.OPEN:COLORS.WIFI;}
+function colorFor(p){
+  if(p.type==='BLE') return COLORS.BLE;
+  if(p.type==='CELL') return COLORS.CELL;
+  if(p.type==='FLOCK') return COLORS.FLOCK;
+  return isOpen(p.auth)?COLORS.OPEN:COLORS.WIFI;
+}
 
 // ---- map ----
 const map=L.map('map',{preferCanvas:true,zoomControl:false,minZoom:2}).setView([20,0],2);
@@ -185,7 +191,7 @@ function rebuildMarkers(){
   markersLayer.clearLayers();
   for(const p of filtered){
     const m=L.marker([p.lat,p.lon],{icon:makeIcon(p)});
-    m.bindTooltip(esc(p.ssid)+' · '+p.type+(isFinite(p.rssi)?(' · '+p.rssi+' dBm'):''),{direction:'top',offset:[0,-6]});
+    m.bindTooltip(esc(p.ssid||p.mac)+' · '+p.type+(isFinite(p.rssi)?(' · '+p.rssi+' dBm'):''),{direction:'top',offset:[0,-6]});
     m.on('click',()=>selectPoint(p));
     p._marker=m;
     markersLayer.addLayer(m);
@@ -260,13 +266,22 @@ function parseCSVFile(text){
     const lat=parseFloat(r[I.lat]), lon=parseFloat(r[I.lon]);
     if(!isFinite(lat)||!isFinite(lon)||(lat===0&&lon===0)) continue;
     let rawType=(I.type>=0?(r[I.type]||''):'').trim().toUpperCase();
+    const ssid=(I.ssid>=0?r[I.ssid]:'').trim()||'(hidden)';
+    
     let type;
-    if(/BLE|BLUETOOTH|^BT$/.test(rawType)) type='BLE';
+    if(/BLE|BLUETOOTH|^BT$/i.test(rawType)) type='BLE';
+    else if(/GSM|LTE|CDMA|WCDMA|UMTS|NR/i.test(rawType)) type='CELL';
     else if(rawType===''||rawType==='WIFI'||rawType==='WLAN') type='WIFI';
-    else continue;
+    else type='WIFI'; // Default assumption if type col exists but is unrecognized
+    
+    // Override logic for specific fingerprinting (e.g. Flock Safety Cameras)
+    if(/^flock/i.test(ssid) || /flock-os/i.test(ssid)) {
+        type='FLOCK';
+    }
+
     out.push({
       mac:(I.mac>=0?r[I.mac]:'').trim(),
-      ssid:(I.ssid>=0?r[I.ssid]:'').trim()||'(hidden)',
+      ssid:ssid,
       auth:(I.auth>=0?r[I.auth]:'').trim(),
       seen:(I.seen>=0?r[I.seen]:'').trim(),
       chan:I.chan>=0?r[I.chan]:'',
@@ -286,25 +301,48 @@ function dedupe(recs){
   }
   return [...map2.values()];
 }
-function readFile(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsText(f);});}
+
+// Support natively decompressing .gz using standard browser APIs
+async function readFile(f){
+  if(f.name.toLowerCase().endsWith('.gz')){
+    try {
+      const ds = new DecompressionStream('gzip');
+      const stream = f.stream().pipeThrough(ds);
+      return await new Response(stream).text();
+    } catch(e) {
+      console.error("Gzip decompression failed", e);
+      throw e;
+    }
+  }
+  return await f.text();
+}
 
 function loadSample(){
   all=SAMPLE.map(r=>({mac:r[0],ssid:r[1]||'(hidden)',auth:r[2],seen:r[3],chan:r[4],rssi:r[5],lat:r[6],lon:r[7],type:r[8],obs:1}));
-  document.getElementById('filebar').textContent='sample data — drop WiGLE, Ghost ESP or similar wardriving CSVs to replace it';
+  document.getElementById('filebar').textContent='sample data — drop WiGLE (.csv or .csv.gz) or wardriving logs';
   afterLoad();
 }
 function handleFiles(fileList){
-  const files=[...fileList].filter(f=>/\.csv$/i.test(f.name));
+  const files=[...fileList].filter(f=>/\.csv(\.gz)?$/i.test(f.name));
   if(!files.length) return;
   document.getElementById('filebar').textContent='parsing '+files.length+' file(s)…';
+  
   Promise.all(files.map(readFile)).then(texts=>{
     let recs=[];
     texts.forEach(t=>{recs=recs.concat(parseCSVFile(t));});
-    if(!recs.length){alert('No WiFi/Bluetooth rows with valid GPS coordinates were recognized in the selected file(s).');document.getElementById('filebar').textContent=files.map(f=>f.name).join(', ');return;}
+    if(!recs.length){
+        alert('No rows with valid GPS coordinates were recognized in the selected file(s).');
+        document.getElementById('filebar').textContent=files.map(f=>f.name).join(', ');
+        return;
+    }
     all=dedupe(recs);
     document.getElementById('filebar').textContent=files.map(f=>f.name).join(', ');
     afterLoad();
-  }).catch(()=>alert('Could not read the selected file(s).'));
+  }).catch((e)=>{
+      console.error(e);
+      alert('Could not read or decompress the selected file(s).');
+      document.getElementById('filebar').textContent='Error loading files';
+  });
 }
 document.getElementById('fin').addEventListener('change',e=>handleFiles(e.target.files));
 const mapwrap=document.getElementById('mapwrap'), dropEl=document.getElementById('drop');
@@ -317,13 +355,23 @@ function afterLoad(){
   applyFilters(); updateHeaderStats(); rebuildMarkers(); renderTable(); updateInfoPanel(); fitData();
 }
 function updateHeaderStats(){
-  const wifi=all.filter(p=>p.type==='WIFI').length, ble=all.filter(p=>p.type==='BLE').length;
-  document.getElementById('qstats').innerHTML='<span><b>'+all.length+'</b> networks</span><span><b>'+wifi+'</b> wifi</span><span><b>'+ble+'</b> bt</span>';
+  const wifi=all.filter(p=>p.type==='WIFI').length, 
+        ble=all.filter(p=>p.type==='BLE').length,
+        cell=all.filter(p=>p.type==='CELL').length,
+        flock=all.filter(p=>p.type==='FLOCK').length;
+  document.getElementById('qstats').innerHTML=
+    '<span><b>'+all.length+'</b> total</span>'+
+    '<span><b>'+wifi+'</b> wifi</span>'+
+    '<span><b>'+ble+'</b> bt</span>'+
+    (cell>0 ? '<span><b>'+cell+'</b> cell</span>' : '')+
+    (flock>0 ? '<span><b>'+flock+'</b> flock</span>' : '');
 }
 function applyFilters(){
   filtered=all.filter(p=>{
     if(p.type==='WIFI'&&!filters.WIFI) return false;
     if(p.type==='BLE'&&!filters.BLE) return false;
+    if(p.type==='CELL'&&!filters.CELL) return false;
+    if(p.type==='FLOCK'&&!filters.FLOCK) return false;
     if(filters.OPENONLY && !(p.type==='WIFI'&&isOpen(p.auth))) return false;
     if(searchTerm && !((p.ssid||'').toLowerCase().includes(searchTerm)||(p.mac||'').toLowerCase().includes(searchTerm))) return false;
     return true;
@@ -377,8 +425,8 @@ function updateInfoPanel(){
   if(selected){
     const p=selected;
     box.innerHTML='<h2>Selected <span id="closeSel">&#10005;</span></h2>'+
-      '<div class="statline"><span>SSID</span><b>'+esc(p.ssid)+'</b></div>'+
-      '<div class="statline"><span>MAC</span><b>'+esc(p.mac||'—')+'</b></div>'+
+      '<div class="statline"><span>Network</span><b>'+esc(p.ssid)+'</b></div>'+
+      '<div class="statline"><span>MAC / ID</span><b>'+esc(p.mac||'—')+'</b></div>'+
       '<div class="statline"><span>Type</span><b>'+p.type+'</b></div>'+
       '<div class="statline"><span>Security</span><b>'+(p.type==='WIFI'?(isOpen(p.auth)?'OPEN':esc(p.auth||'secured')):'—')+'</b></div>'+
       '<div class="statline"><span>Channel</span><b>'+esc(p.chan||'—')+'</b></div>'+
@@ -388,14 +436,19 @@ function updateInfoPanel(){
       '<div class="statline"><span>Observations</span><b>'+(p.obs||1)+'</b></div>';
     document.getElementById('closeSel').onclick=()=>{selected=null;renderTable();updateInfoPanel();};
   } else {
-    const wifi=all.filter(p=>p.type==='WIFI').length, ble=all.filter(p=>p.type==='BLE').length;
+    const wifi=all.filter(p=>p.type==='WIFI').length, 
+          ble=all.filter(p=>p.type==='BLE').length,
+          cell=all.filter(p=>p.type==='CELL').length,
+          flock=all.filter(p=>p.type==='FLOCK').length;
     const open=all.filter(p=>p.type==='WIFI'&&isOpen(p.auth)).length;
     box.innerHTML='<h2>Summary</h2>'+
-      '<div class="statline"><span>Unique networks</span><b>'+all.length+'</b></div>'+
+      '<div class="statline"><span>Unique nodes</span><b>'+all.length+'</b></div>'+
       '<div class="statline"><span>WiFi</span><b>'+wifi+'</b></div>'+
       '<div class="statline"><span>Bluetooth</span><b>'+ble+'</b></div>'+
+      '<div class="statline"><span>Cell Towers</span><b>'+cell+'</b></div>'+
+      '<div class="statline"><span>Flock Cams</span><b>'+flock+'</b></div>'+
       '<div class="statline warn"><span>Open WiFi</span><b>'+open+'</b></div>'+
-      '<div class="statline"><span>Shown</span><b>'+filtered.length+'</b></div>';
+      '<div class="statline" style="margin-top:8px;border-top:1px solid #262a28;padding-top:8px"><span>Shown</span><b>'+filtered.length+'</b></div>';
   }
 }
 
