@@ -1,85 +1,406 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>DrvSniff — wardriving map</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ3aKf2z0s0VjJw8k2nS1p8mE7m0r5s=" crossorigin="">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DrvSniff — wardriving CSV map</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 <style>
-:root{color-scheme:dark;--bg:#111516;--panel:#191f20;--panel2:#202829;--line:#394344;--text:#e6ecea;--muted:#91a09d;--green:#52d19c;--amber:#e7ae58;--red:#ef6b68;--cyan:#6fc7cf}
-*{box-sizing:border-box}html,body{height:100%;margin:0}body{background:var(--bg);color:var(--text);font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;display:flex;flex-direction:column;overflow:hidden}button,input{font:inherit;color:inherit}button{cursor:pointer}.topbar{height:54px;display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line)}.brand{font-size:16px;font-weight:800;letter-spacing:.02em;white-space:nowrap}.brand b{color:var(--green)}.sub{color:var(--muted);font-size:11px;border-left:1px solid var(--line);padding-left:12px;white-space:nowrap}.actions{margin-left:auto;display:flex;gap:7px}.btn{background:var(--panel2);border:1px solid var(--line);padding:7px 10px;border-radius:2px;white-space:nowrap}.btn:hover{border-color:var(--green)}.btn.primary{background:var(--green);border-color:var(--green);color:#082018;font-weight:800}.btn:disabled{opacity:.5;cursor:not-allowed}.metrics{display:flex;gap:14px;color:var(--muted);white-space:nowrap;font-size:11px}.metrics strong{color:var(--text)}.status{color:var(--muted);font-size:10px}.status.loading{color:var(--amber)}.status.error{color:var(--red)}main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 380px}#map{min-width:0;background:#c9d1d0}.side{min-height:0;display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--line)}.toolbar{padding:10px;border-bottom:1px solid var(--line)}.toolbar h1{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.08em;margin:0 0 8px}.filters{display:flex;gap:6px;flex-wrap:wrap}.filter{padding:5px 8px;background:var(--panel2);border:1px solid var(--line);border-radius:2px;color:var(--muted);font-size:11px}.filter.active{color:var(--text);border-color:var(--green)}.filter[data-filter="open"].active{border-color:var(--red);color:var(--red)}.search{width:100%;margin-top:8px;padding:7px 8px;background:#101516;border:1px solid var(--line);border-radius:2px;font-size:11px}.search:focus{outline:1px solid var(--green)}.importnote{margin-top:8px;color:var(--muted);font-size:10px}.tablebox{flex:1;min-height:0;overflow:auto}table{width:100%;border-collapse:collapse;table-layout:fixed}th{position:sticky;top:0;background:var(--panel);color:var(--muted);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:7px 9px;border-bottom:1px solid var(--line);z-index:2;cursor:pointer}th:hover{color:var(--green)}th:nth-child(1){width:44%}th:nth-child(2){width:34%}th:nth-child(3){width:22%}td{padding:7px 9px;border-bottom:1px solid #293132;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}tr{cursor:pointer}tr:hover td,tr.selected td{background:#273333}tr.selected td:first-child{box-shadow:inset 3px 0 var(--green)}.details{border-top:1px solid var(--line);padding:10px;min-height:150px}.details h2{font-size:11px;text-transform:uppercase;color:var(--muted);margin:0 0 8px}.row{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-size:10px}.row span{color:var(--muted)}.row b{max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.warn{color:var(--red)}.leaflet-container{font:11px ui-monospace,SFMono-Regular,Consolas,monospace}.leaflet-control-zoom a,.leaflet-control-layers{background:var(--panel)!important;color:var(--text)!important;border-color:var(--line)!important}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--text);border:1px solid var(--line)}.leaflet-popup-content{margin:10px;font-size:11px}.popup-title{font-weight:800;margin-bottom:5px}.popup-row{color:var(--muted);padding:2px 0;font-size:10px}.popup-row b{color:var(--text)}.leaflet-control-attribution{font-size:9px}.drop{display:none;position:absolute;inset:0;z-index:1000;align-items:center;justify-content:center;background:rgba(17,21,22,.88);border:2px dashed var(--green);color:var(--green);font-size:14px;pointer-events:none}.drop.on{display:flex}.mapwrap{position:relative;min-height:0}@media(max-width:900px){main{grid-template-columns:1fr;grid-template-rows:1fr 330px}.side{border-left:0;border-top:1px solid var(--line)}.sub{display:none}.metrics{display:none}}@media(max-width:520px){.topbar{padding:0 9px;gap:8px}.brand{font-size:14px}.btn{padding:6px 7px;font-size:11px}.side{font-size:10px}}
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:#0c0e0d;color:#eceeec;font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+:focus-visible{outline:2px solid #eceeec;outline-offset:1px}
+header{flex:0 0 auto;height:52px;display:flex;align-items:center;gap:14px;padding:0 14px;background:#131615;border-bottom:1px solid #262a28}
+.brand{font-weight:700;font-size:15px;white-space:nowrap;letter-spacing:-.01em}
+.loadbtn{background:#eceeec;color:#0c0e0d;font-weight:600;border:1px solid #eceeec;border-radius:3px;padding:7px 12px;cursor:pointer;font:12px/1 inherit;white-space:nowrap}
+.loadbtn:hover{background:#c9cdca}
+.filebar{color:#9a9e9b;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.qstats{margin-left:auto;display:flex;gap:14px;font-size:11px;color:#9a9e9b;white-space:nowrap}
+.qstats b{color:#eceeec;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+main{flex:1;display:grid;grid-template-columns:1fr 360px;min-height:0}
+#mapwrap{position:relative;min-width:0;overflow:hidden}
+#map{position:absolute;inset:0;background:#0c0e0d}
+.leaflet-container{background:#0c0e0d;font-family:inherit}
+.leaflet-tile-pane{filter:brightness(.94)}
+.leaflet-bar{border:1px solid #262a28!important;border-radius:3px!important}
+.leaflet-bar a{background:#131615!important;color:#eceeec!important;border-bottom:1px solid #262a28!important;width:28px!important;height:26px!important;line-height:26px!important}
+.leaflet-bar a:last-child{border-bottom:none!important}
+.leaflet-bar a:hover{background:#1a1e1c!important}
+.leaflet-control-attribution{background:rgba(19,22,21,.88)!important;color:#9a9e9b!important;border:1px solid #262a28!important;border-radius:3px!important;font-size:10px!important}
+.leaflet-control-attribution a{color:#c7cbc8!important}
+.leaflet-control-scale-line{background:rgba(19,22,21,.88)!important;border-color:#9a9e9b!important;color:#eceeec!important;font-family:ui-monospace,monospace!important}
+.leaflet-tooltip{background:#131615!important;border:1px solid #3a3f3c!important;color:#eceeec!important;border-radius:3px;font-size:11px;box-shadow:none!important;padding:4px 7px!important}
+.leaflet-tooltip-top:before{border-top-color:#3a3f3c!important}
+.netdot{display:block;width:100%;height:100%;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+.clustericon{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font:11px/1 ui-monospace,monospace;font-weight:700;color:#eceeec;background:rgba(47,182,115,.22);border:1.5px solid #2fb673}
+#legend{position:absolute;left:10px;top:10px;background:#131615;border:1px solid #262a28;border-radius:3px;padding:7px 10px;font-size:11px;display:flex;gap:10px;flex-wrap:wrap;max-width:70%;z-index:1200}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+#status{position:absolute;left:0;right:0;bottom:0;height:24px;display:flex;align-items:center;gap:16px;padding:0 10px;background:#131615;border-top:1px solid #262a28;font-size:10.5px;color:#9a9e9b;overflow:hidden;white-space:nowrap;z-index:1200;font-family:ui-monospace,monospace}
+#drop{position:absolute;inset:0;background:rgba(12,14,13,.94);border:2px dashed #eceeec;display:none;align-items:center;justify-content:center;font-size:14px;color:#eceeec;z-index:2000;text-align:center;padding:20px}
+#drop.on{display:flex}
+aside{display:flex;flex-direction:column;background:#101312;border-left:1px solid #262a28;min-height:0}
+.sec{border-bottom:1px solid #262a28;padding:10px 12px;flex:0 0 auto}
+.sec h2{font-size:11px;font-weight:700;color:#6b716e;margin:0 0 8px}
+.toggles{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid #262a28;background:#131615;color:#9a9e9b;border-radius:3px;padding:5px 9px;font:11px/1 inherit;cursor:pointer}
+.chip:hover{border-color:#3a3f3c}
+.chip.on{color:#eceeec;border-color:#3a3f3c}
+.chip.on[data-k="WIFI"]{border-color:#2fb673;color:#2fb673}
+.chip.on[data-k="BLE"]{border-color:#e2a336;color:#e2a336}
+.chip.on[data-k="OPEN"]{border-color:#e5484d;color:#e5484d}
+#search{width:100%;background:#131615;border:1px solid #262a28;border-radius:3px;color:#eceeec;padding:6px 8px;font:12px inherit;margin-top:8px}
+#search:focus{outline:none;border-color:#eceeec}
+.tablewrap{flex:1;overflow:auto;min-height:0;padding:0}
+table{width:100%;border-collapse:collapse;font-size:11px;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+thead th{position:sticky;top:0;background:#101312;text-align:left;padding:6px 8px;color:#6b716e;font-weight:700;border-bottom:1px solid #262a28;cursor:pointer;white-space:nowrap;font-family:-apple-system,sans-serif}
+thead th:hover{color:#eceeec}
+tbody td{padding:6px 8px;border-bottom:1px solid #191c1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;cursor:pointer}
+tbody tr:hover td{background:#131615}
+tbody tr.sel td{background:#1c2a22}
+.tyd{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+.statline{display:flex;justify-content:space-between;gap:8px;padding:3px 0;color:#9a9e9b;font-family:-apple-system,sans-serif}
+.statline b{color:#eceeec;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;font-family:ui-monospace,monospace}
+.statline.warn b{color:#e5484d}
+#closeSel{float:right;cursor:pointer;color:#6b716e;font-family:-apple-system,sans-serif}
+#closeSel:hover{color:#eceeec}
+@media(max-width:860px){main{grid-template-columns:1fr;grid-template-rows:1fr 260px}aside{border-left:0;border-top:1px solid #262a28}}
+@media(max-width:600px){.filebar{display:none}header{gap:8px;padding:0 8px}.qstats{gap:8px}}
 </style>
 </head>
 <body>
-<header class="topbar"><div class="brand">DrvSniff <b>//</b></div><div class="sub">WARDIVING / RF INVENTORY</div><div class="actions"><label class="btn primary" id="importBtn">Import CSV / GZ<input id="files" type="file" accept=".csv,.csv.gz,.gz,.txt,text/csv,text/plain,application/gzip" multiple hidden></label><button class="btn" id="fit">Fit data</button></div><div class="metrics"><span id="status" class="status">ready</span><span><strong id="totalCount">0</strong> total</span><span><strong id="shownCount">0</strong> shown</span></div></header>
-<main><section class="mapwrap"><div id="map"></div><div class="drop" id="drop">Drop capture files (.csv, .csv.gz) to import</div></section><aside class="side"><section class="toolbar"><h1>Capture inventory</h1><div class="filters"><button class="filter active" data-filter="wifi">📡 WiFi <span id="wifiCount">0</span></button><button class="filter active" data-filter="ble">🔌 BLE <span id="bleCount">0</span></button><button class="filter" data-filter="open">⚠ Open</button></div><input class="search" id="search" placeholder="Filter SSID, BSSID, vendor…" autocomplete="off"><div class="importnote" id="source">Built-in sample · CSV/GZ stays in your browser</div></section><section class="tablebox"><table><thead><tr><th data-sort="ssid">Network</th><th data-sort="mac">BSSID</th><th data-sort="rssi">RSSI</th></tr></thead><tbody id="rows"></tbody></table></section><section class="details" id="details"></section></aside></main>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+<header>
+  <div class="brand">DrvSniff</div>
+  <label class="loadbtn">Load CSV<input type="file" id="fin" accept=".csv,text/csv" multiple hidden></label>
+  <div class="filebar" id="filebar">sample data — drop WiGLE, Ghost ESP or similar wardriving CSVs to replace it</div>
+  <div class="qstats" id="qstats"></div>
+</header>
+<main>
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="legend">
+      <span><i class="dot" style="background:#2fb673"></i>WiFi secured</span>
+      <span><i class="dot" style="background:#e5484d"></i>WiFi open</span>
+      <span><i class="dot" style="background:#e2a336"></i>Bluetooth</span>
+    </div>
+    <div id="status">
+      <span id="stCoord">lat — lon —</span>
+      <span id="stZoom"></span>
+    </div>
+    <div id="drop">Drop wardriving CSV file(s) to load</div>
+  </div>
+  <aside>
+    <div class="sec">
+      <h2>Filter</h2>
+      <div class="toggles">
+        <button class="chip on" data-k="WIFI">&#9679; WiFi</button>
+        <button class="chip on" data-k="BLE">&#9679; Bluetooth</button>
+        <button class="chip" data-k="OPEN">&#9679; Open only</button>
+      </div>
+      <input type="text" id="search" placeholder="search SSID or MAC…">
+    </div>
+    <div class="sec tablewrap">
+      <table>
+        <thead><tr><th data-s="ssid">Network</th><th data-s="mac">MAC</th><th data-s="rssi">dBm</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="sec" id="statsbox"></div>
+  </aside>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
+(function(){
 'use strict';
-const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const colors={wifi:'#52d19c',open:'#ef6b68',ble:'#e7ae58'};let records=[],shown=[],selected=null,markers=[],sortKey='rssi',sortDir=-1,state={wifi:true,ble:true,open:false,query:''};
+const COLORS={WIFI:'#2fb673',OPEN:'#e5484d',BLE:'#e2a336'};
 
-const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([40.742,-73.993],15);
-L.control.zoom({position:'topright'}).addTo(map);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors',minZoom:2}).addTo(map);
+let all=[], filtered=[];
+let selected=null;
+let filters={WIFI:true,BLE:true,OPENONLY:false};
+let searchTerm='';
+let sort={key:'rssi',dir:-1};
 
-const sample=[
-['AA:11:22:33:44:01','CafeNet-Guest','[ESS]',-58,40.7420,-73.9930,'WIFI'],
-['AA:11:22:33:44:02','HomeWifi_5G','[WPA2-PSK-CCMP][ESS]',-49,40.7423,-73.9925,'WIFI'],
-['AA:11:22:33:44:03','Linksys00231','[WEP]',-71,40.7431,-73.9918,'WIFI'],
-['AA:11:22:33:44:04','xfinitywifi','[ESS]',-66,40.7438,-73.9906,'WIFI'],
-['AA:11:22:33:44:05','Corporate-Guest','[WPA3-SAE-CCMP][ESS]',-54,40.7405,-73.9952,'WIFI'],
-['C4:BE:11:00:AA:01','Pixel Buds Pro','',-55,40.7427,-73.9920,'BLE'],
-['C4:BE:11:00:AA:02','LE-Smart Lock','',-62,40.7434,-73.9911,'BLE']
+const SAMPLE=[
+['AA:11:22:33:44:01','CafeNet-Guest','[ESS]','2026-05-02 09:14:03',6,-58,40.7420,-73.9930,'WIFI'],
+['AA:11:22:33:44:02','HomeWifi_5G','[WPA2-PSK-CCMP][ESS]','2026-05-02 09:14:07',44,-49,40.7423,-73.9925,'WIFI'],
+['AA:11:22:33:44:03','Linksys00231','[WEP]','2026-05-02 09:14:22',1,-71,40.7431,-73.9918,'WIFI'],
+['AA:11:22:33:44:04','xfinitywifi','[ESS]','2026-05-02 09:14:40',11,-66,40.7438,-73.9906,'WIFI'],
+['AA:11:22:33:44:05','FrontDesk-5G','[WPA2-PSK-CCMP][ESS]','2026-05-02 09:15:02',6,-77,40.7412,-73.9941,'WIFI'],
+['AA:11:22:33:44:06','ATT-9F3','[WPA3-SAE-CCMP][ESS]','2026-05-02 09:15:20',153,-54,40.7405,-73.9952,'WIFI'],
+['AA:11:22:33:44:07','','[ESS]','2026-05-02 09:15:41',6,-81,40.7446,-73.9899,'WIFI'],
+['AA:11:22:33:44:08','printer-office','[WPA2-PSK-CCMP][ESS]','2026-05-02 09:16:01',36,-63,40.7398,-73.9962,'WIFI'],
+['C4:BE:11:00:AA:01','','','2026-05-02 09:14:15',0,-70,40.7419,-73.9928,'BLE'],
+['C4:BE:11:00:AA:02','Pixel Buds Pro','','2026-05-02 09:14:33',0,-55,40.7427,-73.9920,'BLE'],
+['C4:BE:11:00:AA:03','LE-Smart Lock','','2026-05-02 09:14:58',0,-62,40.7434,-73.9911,'BLE'],
+['C4:BE:11:00:AA:04','','','2026-05-02 09:15:29',0,-74,40.7409,-73.9947,'BLE'],
+['C4:BE:11:00:AA:05','Fitbit Charge','','2026-05-02 09:15:50',0,-59,40.7442,-73.9903,'BLE']
 ];
 
-function openNet(r){return r.type==='WIFI'&&!/wpa|wep|psk|eap|sae|8021x|owe|wapi/i.test(r.auth||'')}
-function status(msg,cls=''){$('#status').textContent=msg;$('#status').className='status '+cls}
-function parseCSV(text){let out=[],row=[],f='',q=false;for(let i=0;i<text.length;i++){let c=text[i];if(q){if(c==='"'&&text[i+1]==='"'){f+='"';i++}else if(c==='"')q=false;else f+=c}else if(c==='"')q=true;else if(c===','){row.push(f);f=''}else if(c==='\n'){row.push(f);out.push(row);row=[];f=''}else if(c!=='\r')f+=c}if(f||row.length){row.push(f);out.push(row)}return out}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function isOpen(auth){const a=String(auth||'');if(!a||a==='[ESS]')return true;return !/wpa|wep|psk|eap|sae|8021x|owe|wapi/i.test(a);}
+function colorFor(p){if(p.type==='BLE')return COLORS.BLE;return isOpen(p.auth)?COLORS.OPEN:COLORS.WIFI;}
 
-function norm(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+// ---- map ----
+const map=L.map('map',{preferCanvas:true,zoomControl:false,minZoom:2}).setView([20,0],2);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,
+  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+}).addTo(map);
+L.control.zoom({position:'topright'}).addTo(map);
+L.control.scale({position:'bottomleft',metric:true,imperial:false}).addTo(map);
+const FitControl=L.Control.extend({
+  options:{position:'topright'},
+  onAdd:function(){
+    const div=L.DomUtil.create('div','leaflet-bar');
+    const a=L.DomUtil.create('a','',div);
+    a.href='#'; a.title='Fit to data'; a.innerHTML='&#10530;';
+    L.DomEvent.disableClickPropagation(div);
+    L.DomEvent.on(a,'click',function(e){L.DomEvent.preventDefault(e);fitData();});
+    return div;
+  }
+});
+map.addControl(new FitControl());
+map.on('mousemove',e=>{document.getElementById('stCoord').textContent='lat '+e.latlng.lat.toFixed(5)+' lon '+e.latlng.lng.toFixed(5);});
+map.on('zoomend',()=>{document.getElementById('stZoom').textContent='z'+map.getZoom();});
+document.getElementById('stZoom').textContent='z'+map.getZoom();
 
-function parseFile(text){let rows=parseCSV(text.trim()+'\n');if(!rows.length)return[];let headerAt=rows.findIndex(r=>r.some(v=>/mac|bssid|latitude|longitude|currentlatitude/i.test(v)));if(headerAt<0)headerAt=0;let h=rows[headerAt].map(norm),find=(...names)=>{for(const n of names){let i=h.indexOf(norm(n));if(i>=0)return i}return -1};let I={mac:find('mac','bssid','bssidmac','address'),ssid:find('ssid','essid','networkname','name'),auth:find('authmode','encryption','privacy','security'),rssi:find('rssi','signal','signaldbm','power','signaldBm'),lat:find('currentlatitude','latitude','lat','gps_lat'),lon:find('currentlongitude','longitude','lon','lng','gps_lng'),chan:find('channel','chan','frequency'),seen:find('firstseen','lastseen','timestamp','time','datetime'),type:find('type','kind','radiotype')};let result=[];for(let i=headerAt+1;i<rows.length;i++){let r=rows[i],lat=parseFloat(r[I.lat]),lon=parseFloat(r[I.lon]);if(!isFinite(lat)||!isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180||(lat===0&&lon===0))continue;let type=I.type>=0&&/ble|bluetooth/i.test(r[I.type])?'BLE':'WIFI';result.push({mac:(r[I.mac]||'unknown').trim(),ssid:(r[I.ssid]||'(hidden)').trim()||'(hidden)',auth:(r[I.auth]||'').trim(),rssi:parseFloat(r[I.rssi]),lat,lon,chan:I.chan>=0?r[I.chan]:'',seen:I.seen>=0?r[I.seen]:'',type,obs:1})}return result}
+const markersLayer=L.markerClusterGroup({
+  maxClusterRadius:50,
+  spiderfyOnMaxZoom:true,
+  iconCreateFunction:function(cluster){
+    const n=cluster.getChildCount();
+    const size=n<10?30:n<100?36:42;
+    return L.divIcon({html:'<div class="clustericon">'+n+'</div>',className:'',iconSize:[size,size]});
+  }
+}).addTo(map);
 
-function dedupe(a){let m=new Map;for(const r of a){let k=(r.mac||'').toLowerCase()+'|'+r.type;if(m.has(k)){let x=m.get(k);x.obs++;if(isFinite(r.rssi)&&(!isFinite(x.rssi)||r.rssi>x.rssi))Object.assign(x,r,{obs:x.obs})}else m.set(k,r)}return [...m.values()]}
+function makeIcon(p){
+  const c=colorFor(p);
+  return L.divIcon({className:'',html:'<span class="netdot" style="background:'+c+'"></span>',iconSize:[10,10],iconAnchor:[5,5]});
+}
+function rebuildMarkers(){
+  markersLayer.clearLayers();
+  for(const p of filtered){
+    const m=L.marker([p.lat,p.lon],{icon:makeIcon(p)});
+    m.bindTooltip(esc(p.ssid)+' · '+p.type+(isFinite(p.rssi)?(' · '+p.rssi+' dBm'):''),{direction:'top',offset:[0,-6]});
+    m.on('click',()=>selectPoint(p));
+    p._marker=m;
+    markersLayer.addLayer(m);
+  }
+}
+function fitData(){
+  if(!all.length) return;
+  map.fitBounds(L.latLngBounds(all.map(p=>[p.lat,p.lon])),{padding:[40,40],maxZoom:17});
+}
+function selectPoint(p){
+  selected=p; renderTable(); updateInfoPanel();
+  if(p._marker) markersLayer.zoomToShowLayer(p._marker,function(){});
+}
 
-async function read(f){return new Promise((ok,no)=>{let r=new FileReader;r.onload=async()=>{try{let text=r.result;if(f.name.endsWith('.gz')||f.type==='application/gzip'){try{let binary=new Uint8Array(text);text=pako.inflate(binary,{to:'string'})}catch(e){return no(new Error('Failed to decompress: '+e.message))}}ok(text)}catch(e){no(e)}};r.onerror=no;if(f.name.endsWith('.gz')){r.readAsArrayBuffer(f)}else{r.readAsText(f)}})}
+// ---- flexible csv parsing (WiGLE, Ghost ESP-style, generic gps/wifi logs) ----
+const FIELD_CANDIDATES={
+  lat:['currentlatitude','latitude','lat','gpslatitude'],
+  lon:['currentlongitude','longitude','lon','lng','long','gpslongitude'],
+  mac:['mac','bssid','address','macaddress','deviceaddress'],
+  ssid:['ssid','name','devicename','essid'],
+  auth:['authmode','auth','encryption','security','capabilities','privacy'],
+  rssi:['rssi','signal','signalstrength','level','power','dbm'],
+  chan:['channel','chan','freq','frequency'],
+  seen:['firstseen','time','timestamp','datetime','date','lastseen'],
+  type:['type','radiotype','devicetype','kind']
+};
+function normHeader(h){return (h||'').trim().toLowerCase().replace(/[^a-z0-9]/g,'');}
+function buildIndex(headerRow){
+  const norm=headerRow.map(normHeader);
+  const idx={};
+  for(const f in FIELD_CANDIDATES){
+    idx[f]=-1;
+    for(const cand of FIELD_CANDIDATES[f]){const i=norm.indexOf(cand); if(i>=0){idx[f]=i;break;}}
+  }
+  return idx;
+}
+function detectDelim(line){
+  const c=(line.match(/,/g)||[]).length, s=(line.match(/;/g)||[]).length;
+  return s>c?';':',';
+}
+function parseCSVtext(text,delim){
+  const rows=[]; let row=[],field='',q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else q=false; } else field+=c; }
+    else {
+      if(c==='"') q=true;
+      else if(c===delim){row.push(field);field='';}
+      else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}
+      else if(c==='\r'){}
+      else field+=c;
+    }
+  }
+  if(field!==''||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+function parseCSVFile(text){
+  const trimmed=text.trim();
+  if(!trimmed) return [];
+  const lines=trimmed.split('\n');
+  let hi=0;
+  const firstCellRaw=(lines[0].split(/[,;]/)[0]||'');
+  if(/^wiglewifi/i.test(firstCellRaw) || lines[0].trim().startsWith('#')) hi=1;
+  const delim=detectDelim(lines[hi]||lines[0]);
+  const rows=parseCSVtext(trimmed+'\n',delim);
+  if(!rows[hi]) return [];
+  const I=buildIndex(rows[hi]);
+  if(I.lat<0||I.lon<0) return [];
+  const out=[];
+  for(let i=hi+1;i<rows.length;i++){
+    const r=rows[i]; if(!r||r.length<2) continue;
+    const lat=parseFloat(r[I.lat]), lon=parseFloat(r[I.lon]);
+    if(!isFinite(lat)||!isFinite(lon)||(lat===0&&lon===0)) continue;
+    let rawType=(I.type>=0?(r[I.type]||''):'').trim().toUpperCase();
+    let type;
+    if(/BLE|BLUETOOTH|^BT$/.test(rawType)) type='BLE';
+    else if(rawType===''||rawType==='WIFI'||rawType==='WLAN') type='WIFI';
+    else continue;
+    out.push({
+      mac:(I.mac>=0?r[I.mac]:'').trim(),
+      ssid:(I.ssid>=0?r[I.ssid]:'').trim()||'(hidden)',
+      auth:(I.auth>=0?r[I.auth]:'').trim(),
+      seen:(I.seen>=0?r[I.seen]:'').trim(),
+      chan:I.chan>=0?r[I.chan]:'',
+      rssi:I.rssi>=0?parseFloat(r[I.rssi]):NaN,
+      lat:lat,lon:lon,type:type,obs:1
+    });
+  }
+  return out;
+}
+function dedupe(recs){
+  const map2=new Map();
+  for(const rec of recs){
+    const k=(rec.mac||(rec.lat+','+rec.lon))+'|'+rec.type;
+    const cur=map2.get(k);
+    if(!cur) map2.set(k,rec);
+    else { cur.obs=(cur.obs||1)+1; if((rec.rssi||-999)>(cur.rssi||-999)){const o=cur.obs;Object.assign(cur,rec);cur.obs=o;} }
+  }
+  return [...map2.values()];
+}
+function readFile(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsText(f);});}
 
-function apply(){let q=state.query;shown=records.filter(r=>(r.type==='WIFI'?state.wifi:state.ble)&&(!state.open||openNet(r))&&(!q||[r.ssid,r.mac,r.auth].join(' ').toLowerCase().includes(q)));shown.sort((a,b)=>{let x=a[sortKey]??'',y=b[sortKey]??'';return typeof x==='string'?x.localeCompare(y)*sortDir:((x||-999)-(y||-999))*sortDir});renderMarkers();renderRows();renderDetails();updateMetrics()}
+function loadSample(){
+  all=SAMPLE.map(r=>({mac:r[0],ssid:r[1]||'(hidden)',auth:r[2],seen:r[3],chan:r[4],rssi:r[5],lat:r[6],lon:r[7],type:r[8],obs:1}));
+  document.getElementById('filebar').textContent='sample data — drop WiGLE, Ghost ESP or similar wardriving CSVs to replace it';
+  afterLoad();
+}
+function handleFiles(fileList){
+  const files=[...fileList].filter(f=>/\.csv$/i.test(f.name));
+  if(!files.length) return;
+  document.getElementById('filebar').textContent='parsing '+files.length+' file(s)…';
+  Promise.all(files.map(readFile)).then(texts=>{
+    let recs=[];
+    texts.forEach(t=>{recs=recs.concat(parseCSVFile(t));});
+    if(!recs.length){alert('No WiFi/Bluetooth rows with valid GPS coordinates were recognized in the selected file(s).');document.getElementById('filebar').textContent=files.map(f=>f.name).join(', ');return;}
+    all=dedupe(recs);
+    document.getElementById('filebar').textContent=files.map(f=>f.name).join(', ');
+    afterLoad();
+  }).catch(()=>alert('Could not read the selected file(s).'));
+}
+document.getElementById('fin').addEventListener('change',e=>handleFiles(e.target.files));
+const mapwrap=document.getElementById('mapwrap'), dropEl=document.getElementById('drop');
+['dragenter','dragover'].forEach(ev=>mapwrap.addEventListener(ev,e=>{e.preventDefault();dropEl.classList.add('on');}));
+mapwrap.addEventListener('dragleave',e=>{e.preventDefault();dropEl.classList.remove('on');});
+mapwrap.addEventListener('drop',e=>{e.preventDefault();dropEl.classList.remove('on');if(e.dataTransfer.files.length)handleFiles(e.dataTransfer.files);});
 
-function renderMarkers(){markers.forEach(m=>m.remove());markers=[];shown.forEach(r=>{let c=openNet(r)?colors.open:(r.type==='BLE'?colors.ble:colors.wifi);let m=L.circleMarker([r.lat,r.lon],{radius:r===selected?8:5,weight:r===selected?3:1,color:'#101516',fillColor:c,fillOpacity:.9}).addTo(map);m.bindPopup(`<div class="popup-title">${esc(r.ssid)}</div><div class="popup-row">${esc(r.type)} · <b>${esc(r.mac)}</b></div><div class="popup-row">RSSI <b>${isFinite(r.rssi)?r.rssi+' dBm':'—'}</b> · ${openNet(r)?'<b class="warn">OPEN</b>':'secured'}</div><div class="popup-row">${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}</div>`);m.on('click',()=>{selected=r;apply()});markers.push(m)})}
+function afterLoad(){
+  selected=null;
+  applyFilters(); updateHeaderStats(); rebuildMarkers(); renderTable(); updateInfoPanel(); fitData();
+}
+function updateHeaderStats(){
+  const wifi=all.filter(p=>p.type==='WIFI').length, ble=all.filter(p=>p.type==='BLE').length;
+  document.getElementById('qstats').innerHTML='<span><b>'+all.length+'</b> networks</span><span><b>'+wifi+'</b> wifi</span><span><b>'+ble+'</b> bt</span>';
+}
+function applyFilters(){
+  filtered=all.filter(p=>{
+    if(p.type==='WIFI'&&!filters.WIFI) return false;
+    if(p.type==='BLE'&&!filters.BLE) return false;
+    if(filters.OPENONLY && !(p.type==='WIFI'&&isOpen(p.auth))) return false;
+    if(searchTerm && !((p.ssid||'').toLowerCase().includes(searchTerm)||(p.mac||'').toLowerCase().includes(searchTerm))) return false;
+    return true;
+  });
+  sortFiltered();
+}
+function sortFiltered(){
+  const key=sort.key, dir=sort.dir;
+  filtered.sort((a,b)=>{
+    let av=a[key],bv=b[key];
+    if(typeof av==='string'){av=av.toLowerCase();bv=(bv||'').toLowerCase();return av<bv?-1*dir:av>bv?1*dir:0;}
+    return ((av||0)-(bv||0))*dir;
+  });
+}
+document.querySelectorAll('.chip').forEach(ch=>{
+  ch.addEventListener('click',()=>{
+    const k=ch.dataset.k;
+    if(k==='OPEN'){filters.OPENONLY=!filters.OPENONLY;ch.classList.toggle('on',filters.OPENONLY);}
+    else {filters[k]=!filters[k];ch.classList.toggle('on',filters[k]);}
+    applyFilters();rebuildMarkers();renderTable();updateInfoPanel();
+  });
+});
+document.getElementById('search').addEventListener('input',e=>{
+  searchTerm=e.target.value.trim().toLowerCase();
+  applyFilters();rebuildMarkers();renderTable();updateInfoPanel();
+});
+document.querySelectorAll('thead th').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const k=th.dataset.s;
+    if(sort.key===k) sort.dir*=-1; else {sort.key=k;sort.dir=k==='ssid'?1:-1;}
+    sortFiltered();renderTable();
+  });
+});
 
-function renderRows(){let visible=shown.slice(0,500);$('#rows').innerHTML=visible.map(r=>`<tr class="${r===selected?'selected':''}" data-idx="${shown.indexOf(r)}"><td><i class="mark" style="background:${openNet(r)?colors.open:r.type==='BLE'?colors.ble:colors.wifi}"></i>${esc(r.ssid)}</td><td>${esc(r.mac)}</td><td>${isFinite(r.rssi)?r.rssi:'—'}</td></tr>`).join('')+(shown.length>500?`<tr><td colspan="3">+${shown.length-500} more records; refine filter</td></tr>`:''');$$('#rows tr[data-idx]').forEach(tr=>tr.onclick=()=>{let idx=+tr.dataset.idx;if(shown[idx]){selected=shown[idx];map.setView([selected.lat,selected.lon],Math.max(map.getZoom(),16));apply()}})}
+function renderTable(){
+  const tb=document.getElementById('tbody');
+  const rows=filtered.slice(0,400);
+  tb.innerHTML=rows.map((p,i)=>
+    '<tr data-i="'+i+'" class="'+(p===selected?'sel':'')+'">'+
+    '<td><span class="tyd" style="background:'+colorFor(p)+'"></span>'+esc(p.ssid)+'</td>'+
+    '<td>'+esc(p.mac)+'</td>'+
+    '<td>'+(isFinite(p.rssi)?p.rssi:'—')+'</td></tr>'
+  ).join('')+(filtered.length>400?'<tr><td colspan="3" style="color:#6b716e;text-align:center;cursor:default">+'+(filtered.length-400)+' more — narrow with filters or search</td></tr>':'');
+  tb.querySelectorAll('tr[data-i]').forEach(tr=>{
+    tr.addEventListener('click',()=>{ selectPoint(rows[+tr.dataset.i]); });
+  });
+}
 
-function renderDetails(){let d=$('#details');if(!selected){let open=records.filter(openNet).length;d.innerHTML=`<h2>Dataset summary</h2><div class="row"><span>Loaded records</span><b>${records.length}</b></div><div class="row"><span>Open WiFi</span><b class="warn">${open}</b></div><div class="row"><span>Shown now</span><b>${shown.length}</b></div>`;return}d.innerHTML=`<h2>Selected network</h2><div class="row"><span>SSID</span><b>${esc(selected.ssid)}</b></div><div class="row"><span>MAC</span><b>${esc(selected.mac)}</b></div><div class="row"><span>Type</span><b>${selected.type}</b></div><div class="row"><span>Security</span><b class="${openNet(selected)?'warn':''}">${selected.type==='BLE'?'—':openNet(selected)?'OPEN':esc(selected.auth||'secured')}</b></div><div class="row"><span>Position</span><b>${selected.lat.toFixed(5)}, ${selected.lon.toFixed(5)}</b></div><div class="row"><span>Observations</span><b>${selected.obs}</b></div>`}
+function updateInfoPanel(){
+  const box=document.getElementById('statsbox');
+  if(selected){
+    const p=selected;
+    box.innerHTML='<h2>Selected <span id="closeSel">&#10005;</span></h2>'+
+      '<div class="statline"><span>SSID</span><b>'+esc(p.ssid)+'</b></div>'+
+      '<div class="statline"><span>MAC</span><b>'+esc(p.mac||'—')+'</b></div>'+
+      '<div class="statline"><span>Type</span><b>'+p.type+'</b></div>'+
+      '<div class="statline"><span>Security</span><b>'+(p.type==='WIFI'?(isOpen(p.auth)?'OPEN':esc(p.auth||'secured')):'—')+'</b></div>'+
+      '<div class="statline"><span>Channel</span><b>'+esc(p.chan||'—')+'</b></div>'+
+      '<div class="statline"><span>RSSI</span><b>'+(isFinite(p.rssi)?p.rssi+' dBm':'—')+'</b></div>'+
+      '<div class="statline"><span>First seen</span><b>'+esc(p.seen||'—')+'</b></div>'+
+      '<div class="statline"><span>Position</span><b>'+p.lat.toFixed(5)+', '+p.lon.toFixed(5)+'</b></div>'+
+      '<div class="statline"><span>Observations</span><b>'+(p.obs||1)+'</b></div>';
+    document.getElementById('closeSel').onclick=()=>{selected=null;renderTable();updateInfoPanel();};
+  } else {
+    const wifi=all.filter(p=>p.type==='WIFI').length, ble=all.filter(p=>p.type==='BLE').length;
+    const open=all.filter(p=>p.type==='WIFI'&&isOpen(p.auth)).length;
+    box.innerHTML='<h2>Summary</h2>'+
+      '<div class="statline"><span>Unique networks</span><b>'+all.length+'</b></div>'+
+      '<div class="statline"><span>WiFi</span><b>'+wifi+'</b></div>'+
+      '<div class="statline"><span>Bluetooth</span><b>'+ble+'</b></div>'+
+      '<div class="statline warn"><span>Open WiFi</span><b>'+open+'</b></div>'+
+      '<div class="statline"><span>Shown</span><b>'+filtered.length+'</b></div>';
+  }
+}
 
-function updateMetrics(){$('#totalCount').textContent=records.length;$('#shownCount').textContent=shown.length;$('#wifiCount').textContent=records.filter(r=>r.type==='WIFI').length;$('#bleCount').textContent=records.filter(r=>r.type==='BLE').length}
-
-function fit(){if(!records.length){status('no data to fit','error');return}let b=L.latLngBounds(records.map(r=>[r.lat,r.lon]));map.fitBounds(b,{padding:[28,28],maxZoom:17});status('fitted')}
-
-$('#files').onchange=e=>importFiles(e.target.files);
-
-async function importFiles(fs){let files=[...fs].filter(f=>/\.(csv|gz)$/i.test(f.name)||f.type.includes('gzip'));if(!files.length){status('no .csv or .gz files selected','error');return}status(`reading ${files.length} file(s)…`,'loading');try{let parsed=[];for(const f of files){try{let txt=await read(f);let p=parseFile(txt);parsed=parsed.concat(p);status(`parsed ${f.name}: ${p.length} nets`,'loading')}catch(e){console.error(f.name,e);status(`error: ${f.name}`,
-'error')}}if(!parsed.length){status('no valid GPS rows found','error');return}records=dedupe(parsed);selected=null;$('#source').textContent=files.map(f=>f.name).join(', ')+' · '+records.length+' networks';apply();fit();status('ready','')}catch(e){console.error(e);status('import failed: '+e.message,'error')}}
-
-for(const b of $$('.filter'))b.onclick=()=>{let k=b.dataset.filter;if(k==='open')state.open=!state.open;else state[k]=!state[k];b.classList.toggle('active',state[k]);apply()};
-
-$('#search').oninput=e=>{state.query=e.target.value.trim().toLowerCase();apply()};
-
-$$('th').forEach(th=>th.onclick=()=>{let k=th.dataset.sort;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=k==='ssid'?1:-1}apply()});
-
-$('#fit').onclick=fit;
-
-let wrap=$('.mapwrap'),drop=$('#drop');
-['dragenter','dragover'].forEach(e=>wrap.addEventListener(e,x=>{x.preventDefault();drop.classList.add('on')}));
-wrap.addEventListener('dragleave',()=>drop.classList.remove('on'));
-wrap.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('on');importFiles(e.dataTransfer.files)});
-
-records=dedupe(sample.map(r=>({mac:r[0],ssid:r[1],auth:r[2],rssi:r[3],lat:r[4],lon:r[5],type:r[6],chan:'',seen:'',obs:1})));
-apply();
-fit();
-status('ready','');
+loadSample();
+})();
 </script>
 </body>
 </html>
